@@ -19,7 +19,6 @@
 //Forall operator in predicate logic: operatorHelper("forall**", 12, true);
 //Forall operator with alternate syntax: operatorHelper("forall*.*",12,true);
 std::vector<Operator> operatorHelper(std::string productionRule, double precedence, bool leftAssociative) {
-    assert(leftAssociative);
     //Not yet UTF-8 safe, due to char symbol checks!
     
     //1. Find the first symbol, which is not a literal *
