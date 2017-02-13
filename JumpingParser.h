@@ -15,7 +15,7 @@ void PrintAST(const AST &);
 #include <locale>
 
 void initEditor() {
-    //Configure UTF-8
+    //Configure UTF-8 for printing purposes
     //std::ios_base::sync_with_stdio(false);
     
     std::cout.imbue( std::locale("en_US.UTF-8") );
@@ -28,6 +28,7 @@ void initEditor() {
 
 #include "Error.h"
 #include "Operators.h"
+#include "OperatorHelper.h"
 #include "Tokens.h"
 #include "Parser.h"
 #include "Tokenizer.h"

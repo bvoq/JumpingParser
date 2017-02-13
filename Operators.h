@@ -27,7 +27,8 @@
 
 //if % 2 == 0 infix, % 3 == 0 prefix, % 5 == 0 postfix.
 enum OperatorType {
-    Infix=2, Prefix=3, Postfix=5, Function=7,
+    Unknown=0,
+    Infix=2, Prefix=3, Postfix=5, Nullary=7,Special=11,SpecialHelper=13,Function=17,
     InfixPrefix=2*3, InfixPostfix=2*5, PrefixPostfix=3*5,
     InfixPrefixPostfix=2*3*5
 };
@@ -39,8 +40,14 @@ struct Operator {
     std::string representation; //Their symbolic representation, like + - * ...
     OperatorType operatorType;
     
+    std::string fullOperator;
+    
     Operator(double _precedence, bool _leftAssociativity, std::string _representation, OperatorType _operatorType)
     : precedence(_precedence), leftAssociativity(_leftAssociativity), representation(_representation), operatorType(_operatorType) {}
+    Operator(double _precedence, bool _leftAssociativity, std::string _representation, std::string _fullOperator)
+    : precedence(_precedence), leftAssociativity(_leftAssociativity), representation(_representation), fullOperator(_fullOperator) {
+        operatorType = Special;
+    }
 
     
     //Token information:
@@ -51,7 +58,7 @@ struct Operator {
 bool operator<(const Operator & lhs, const Operator & rhs) {
     //This is only used to get the right order of operators.
     //1. Sort operators by size.
-    if(lhs.representation.size() != rhs.representation.size()) return lhs.representation.size() < rhs.representation.size();
+    if(lhs.representation.size() != rhs.representation.size()) return lhs.representation.size() > rhs.representation.size();
     //2. Sort by actual operator name
     if(lhs.representation != rhs.representation) return lhs.representation < rhs.representation;
     //It is forbidden to have 2 operators with the same representation and type.

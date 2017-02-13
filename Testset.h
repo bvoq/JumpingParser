@@ -38,9 +38,15 @@ void testset1() {
         {"[","]",true}
     };
     
+    //Custom defined operator:
+    std::vector<Operator> subOperators = operatorHelper("*?*:*", 17, true);
+    operators.insert(operators.end(), subOperators.begin(), subOperators.end()); //append them to operators
+    
+    
     std::string code;
     //code="[a + (e + b * / c - g / d * e)]vd";tokenizer(code, operators, parans);
-    code="3 := sin[3] * a + !!!!(4) :<=> 213 :<=> 123";
+    //code="3 := sin[3] * a + !!!!(4) :<=> 213 :<=> 123";
+    code="3 := sin[3] * a + !!!!(4) ? 4 + 3 : 78";
     AST result = tokenizeAndParse(code, operators, parans);
     PrintAST(result);
     
@@ -61,7 +67,6 @@ void testset2() {
         {2,true,"->",Infix},
         {3,false,"forall",Prefix},
         {3,false,"exists",Prefix}
-    
     };
 }
 

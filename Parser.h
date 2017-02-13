@@ -20,7 +20,7 @@ struct AST {
     std::size_t position, nestDepth;
     
     //In case it is an operator
-    OperatorType operatorType;
+    OperatorType operatorType = Unknown;
     //In case it is a function (type of endbracket, needed for syntactic sugar).
     std::string lParen = "", rParen = ""; //used for printing out nicely
     
@@ -56,6 +56,15 @@ struct AST {
                 str += "(";
                 children[0].debugPrint(str);
                 str += ")" + expression;
+            } else if(operatorType == Special) {
+                //!TODO can't I finally make this an operator reference so this can work a bit better?
+                //Also add code reference AND positions in the code to AST!
+                str += expression + "(";
+                for(int i = 0; i < children.size(); ++i) {
+                    children[i].debugPrint(str);
+                    if(i+1 != children.size()) str += ", ";
+                }
+                str += ")";
             }
             else {
                 error << "Somehow OPTYPE " << operatorType << " doesn't get printed.\n";
@@ -97,6 +106,10 @@ AST parser(std::set<Token> & allTokens, std::priority_queue<OperatorToken, std::
     while(!operatorTokens.empty()) {
         OperatorToken current = operatorTokens.top();
         operatorTokens.pop();
+        
+        //!TODO implement nullary operators
+        assert(current.op->operatorType != Nullary);
+        
         std::set<AST>::iterator currentPos = abstractTree.find( AST("", {}, current.position, 0) );
         AST replacement(*currentPos);
         //Remove the current operator from the expressions and move the iterator one forward
@@ -104,8 +117,77 @@ AST parser(std::set<Token> & allTokens, std::priority_queue<OperatorToken, std::
         
         
         bool successful = false;
+        
+        if(current.op->operatorType == Special) {
+            //!TODO make UTF-8 safe
+            std::string currentLiteral = ""; bool beforeFirstLiteral = true;
+            for(std::size_t i = 0; i < current.representation.size(); ++i) {
+                
+                if(current.representation[i] == '*') {
+                    if(currentLiteral.size() > 0) {
+                        if(beforeFirstLiteral) {
+                            //This literal is the representation of the entire operator, it is marked as the special operator.
+                            replacement.expression = currentLiteral;
+                            replacement.operatorType = Special;
+                            beforeFirstLiteral = false;
+                        } else {
+                            if(currentPos == abstractTree.end()) {
+                                error << "Expected " << currentLiteral << " from operator " << current.representation << ", but got end of line instead.\n";
+                                error.promptError();
+                            }
+                            if(currentPos->expression != currentLiteral) {
+                                error << "Unexpected operator " << currentPos->expression << ", expected " << currentLiteral << " from operator " << current.representation << "\n.";
+                                error.promptError();
+                            }
+                            currentPos = abstractTree.erase(currentPos);
+                        }
+                        currentLiteral = "";
+                    }
+                    
+                    //If a * is situated in front of the first special operator, we move the position back by one.
+                    if(beforeFirstLiteral) {
+                        if(currentPos == abstractTree.begin()) error << "Expected literal, but received beginning of line instead.\n";
+                        error.promptError();
+                        currentPos--;
+                    }
+
+                    if(currentPos == abstractTree.end()) {
+                        error << "Expected expression at operator " << current.representation << ", but got end of line instead.\n";
+                        error.promptError();
+                    }
+                    AST newChild(*currentPos);
+                    replacement.children.push_back(newChild);
+                    currentPos = abstractTree.erase( currentPos );
+                }
+                
+                else if(current.representation[i] != '*') {
+                    currentLiteral.push_back(current.representation[i]);
+                }
+            }
+            
+            if(currentLiteral.size() > 0) {
+                if(beforeFirstLiteral) {
+                    replacement.expression = currentLiteral;
+                    replacement.operatorType = Special;
+                    beforeFirstLiteral = false;
+                } else {
+                    if(currentPos == abstractTree.end()) {
+                        error << "Expected " << currentLiteral << " from operator " << current.representation << ", but got end of line instead.\n";
+                        error.promptError();
+                    }
+                    if(currentPos->expression != currentLiteral) {
+                        error << "Unexpected operator " << currentPos->expression << ", expected " << currentLiteral << " from operator " << current.representation << "\n.";
+                        error.promptError();
+                    }
+                    currentPos = abstractTree.erase(currentPos);
+                }
+            }
+            successful = true;
+        }
+        
+        
         //Functions
-        if(current.op->operatorType % 7 == 0) {
+        if(current.op->operatorType == Function) {
             //Read in the left parenthesis
             replacement.lParen = currentPos->expression;
             currentPos = abstractTree.erase(currentPos);
@@ -119,7 +201,6 @@ AST parser(std::set<Token> & allTokens, std::priority_queue<OperatorToken, std::
             } while(currentPos->nestDepth != current.nestDepth || !endParenthesis(currentPos->expression, parens));
             //Store type of closing parenthesis for beautiful printing
             replacement.rParen = currentPos->expression;
-            
             //Remove closing parenthesis
             abstractTree.erase(currentPos);
             successful = true;
@@ -176,6 +257,7 @@ AST parser(std::set<Token> & allTokens, std::priority_queue<OperatorToken, std::
                 successful = true;
             }
         }
+        
         if(successful) {
             error.resolveError();
             abstractTree.insert(replacement);

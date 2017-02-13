@@ -27,6 +27,8 @@ int printPostOrderUTF8(const AST & root, std::vector<std::wstring> & result, int
     for(std::size_t i = 0; i < root.children.size(); ++i) {
         std::size_t childWidth = printPostOrderUTF8(root.children[i], result, depth + 2, pos + childSpace);
         
+        //slight correction
+        if(childWidth % 2 == 0) childWidth--;
         //Add the spaces or lines until the child is reached.
         std::size_t childPos = pos + childSpace + childWidth/2;
         if(i == 0) {
@@ -95,6 +97,8 @@ int printPostOrderASCII(const AST & root, std::vector<std::string> & result, int
     for(std::size_t i = 0; i < root.children.size(); ++i) {
         std::size_t childWidth = printPostOrderASCII(root.children[i], result, depth + 2, pos + childSpace);
         
+        //slight correction since odd space width:
+        if(childWidth % 2 == 0) childWidth--;
         //Add the spaces or lines until the child is reached.
         std::size_t childPos = pos + childSpace + childWidth/2;
         if(i == 0) {
@@ -147,12 +151,22 @@ int printPostOrderASCII(const AST & root, std::vector<std::string> & result, int
 }
 
 
-void PrintAST(const AST & root) {
-    std::vector<std::wstring> stringRepresentation;
+void PrintASTASCII(const AST & root) {
+    std::vector<std::string> representation;
+    
+    printPostOrderASCII(root,  representation, 0, 0);
+    for(std::size_t i = 0; i < representation.size(); ++i) {
+        std::cout << representation[i] << std::endl;
+    }
+}
 
-    printPostOrderUTF8(root,  stringRepresentation, 0, 0);
-    for(std::size_t i = 0; i < stringRepresentation.size(); ++i) {
-        std::wcout << stringRepresentation[i] << std::endl;
+
+void PrintAST(const AST & root) {
+    std::vector<std::wstring> representation;
+
+    printPostOrderUTF8(root, representation, 0, 0);
+    for(std::size_t i = 0; i < representation.size(); ++i) {
+        std::wcout << representation[i] << std::endl;
     }
 }
 

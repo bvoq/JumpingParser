@@ -125,7 +125,6 @@ AST tokenizeAndParse(std::string & code, std::vector<Operator> operators, std::v
                     }
                     //Move the position according to the size of the left parenthesis.
                     pos += parens[i].LParen.size()-1;
-                    
                     goto nextCharacter;
                 }
             }
@@ -137,9 +136,21 @@ AST tokenizeAndParse(std::string & code, std::vector<Operator> operators, std::v
         for(int i = 0; i < operators.size(); ++i) {
             if(checkMatch(code, operators[i].representation, pos)) {
                 pushStringToken(allTokens, cs, cssi, currentParens.size());
-                OperatorToken newOperatorToken(operators[i].representation, pos, currentParens.size(), &operators[i]);
-                operatorTokens.push(newOperatorToken);
-                allTokens.insert(newOperatorToken);
+                
+                if(operators[i].operatorType == Special) {
+                    OperatorToken newSpecialOperatorToken(operators[i].fullOperator, pos, currentParens.size(), &operators[i]);
+                    operatorTokens.push(newSpecialOperatorToken);
+                    allTokens.insert(newSpecialOperatorToken);
+                } else if(operators[i].operatorType == SpecialHelper) {
+                    Token specialHelperToken(operators[i].representation, pos, currentParens.size());
+                    allTokens.insert(specialHelperToken);
+                }
+                else {
+                    OperatorToken newOperatorToken(operators[i].representation, pos, currentParens.size(), &operators[i]);
+                    operatorTokens.push(newOperatorToken);
+                    allTokens.insert(newOperatorToken);
+
+                }
                 
                 //Move the position according to the size of the operator.
                 pos += operators[i].representation.size()-1;
@@ -166,7 +177,7 @@ AST tokenizeAndParse(std::string & code, std::vector<Operator> operators, std::v
 
     
     //For future debugging purposes
-    //for(const Token & t : allTokens) std::cout << "\"" << t.representation << "," <<t.nestDepth << "\" ";
+    //for(Token t : allTokens) std::cout << "\"" << t.representation << "," <<t.nestDepth << "\" ";
     //std::cout << std::endl;
     
     //while(!operatorTokens.empty()) {
